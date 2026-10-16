@@ -47,3 +47,14 @@ def test_mock_client_forces_llm_fallback_to_heuristics_for_analysis():
     assert any(issue.get("type") == "Code Quality" for issue in result["issues"])
     # Ensure we logged the fallback path
     assert any("Falling back to heuristics" in entry.get("message", "") for entry in result["logs"])
+
+
+def test_unchanged_fix_with_detected_issue_requires_human_review():
+    agent = BugHoundAgent(client=None)
+    code = "def preview():\n    # TODO: replace this before release\n    return True\n"
+
+    result = agent.run(code)
+
+    assert result["fixed_code"] == code
+    assert result["risk"]["should_autofix"] is False
+    assert "Proposed fix does not address the detected issues." in result["risk"]["reasons"]
